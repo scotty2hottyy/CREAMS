@@ -25,8 +25,8 @@ class WebsiteIO:
             return_exceptions=True,
         )
 
-    async def send_rooms(self, ws: Any, room_manager: ChatRoomHost) -> None:
-        await self.send_json(ws, {"type": "rooms", "rooms": room_manager.get_room_list()})
+    async def send_rooms(self, ws: Any, rooms: list[dict[str, Any]]) -> None:
+        await self.send_json(ws, {"type": "rooms", "rooms": rooms})
 
     async def send_presence(self, ws: Any, session_manager: SessionManager) -> None:
         await self.send_json(
@@ -37,11 +37,11 @@ class WebsiteIO:
     async def broadcast_rooms_to_all(
         self,
         session_manager: SessionManager,
-        room_manager: ChatRoomHost,
+        rooms: list[dict[str, Any]],
     ) -> None:
         await self.broadcast_to_clients(
             session_manager.get_all_connections(),
-            {"type": "rooms", "rooms": room_manager.get_room_list()},
+            {"type": "rooms", "rooms": rooms},
         )
 
     async def broadcast_presence_to_all(self, session_manager: SessionManager) -> None:

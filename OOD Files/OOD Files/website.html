@@ -82,7 +82,6 @@
     .composer{ display:flex; gap:10px; padding:14px 16px; border-top:1px solid var(--border); background: rgba(0,0,0,.10); }
     .composer input{ flex:1; background: rgba(0,0,0,.22); }
 
-    /* Friends */
     .friendsHead{ display:flex; align-items:center; justify-content:space-between; margin-top:18px; }
     .friendsHead h3{ margin:0; font-size:13px; }
     .friendsList{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
@@ -109,14 +108,12 @@
 </head>
 <body>
   <div class="shell">
-
-    <!-- Left -->
     <section class="card">
       <div class="brand">
         <div class="logo"></div>
         <div>
           <h1>Chat Rooms</h1>
-          <p>Click a room to join/switch</p>
+          <p>Click a room to join or switch</p>
         </div>
       </div>
 
@@ -143,7 +140,6 @@
         </div>
         <div id="rooms" class="rooms"></div>
 
-        <!-- Friends -->
         <div class="friendsHead">
           <h3>Friends</h3>
           <span class="badge" id="friendsCount">0</span>
@@ -160,7 +156,6 @@
       </div>
     </section>
 
-    <!-- Right -->
     <section class="card">
       <div class="chatHead">
         <div>
@@ -176,7 +171,6 @@
         <input id="m" type="text" placeholder="Type message… (paste images too)" disabled />
       </div>
     </section>
-
   </div>
 
   <script>
@@ -193,25 +187,23 @@
     const statusText = document.getElementById("statusText");
     const roomTitle = document.getElementById("roomTitle");
     const roomSub = document.getElementById("roomSub");
-
-    // Friends UI
     const friendsEl = document.getElementById("friends");
     const friendsCountEl = document.getElementById("friendsCount");
     const friendInput = document.getElementById("friendInput");
     const addFriendBtn = document.getElementById("addFriendBtn");
     const whoBtn = document.getElementById("whoBtn");
 
+    const WS_PORT = 6790;
     let connected = false;
     let currentRoom = null;
-
-    // Presence state
     let onlineNames = new Set();
+    let ws = null;
+    let currentServerUrl = null;
+    let pendingJoinRoom = null;
 
-    // Remember per tab
     nameEl.value = localStorage.getItem("chat_name") || "";
     roomEl.value = localStorage.getItem("chat_room") || "";
 
-    // Friends list persisted in localStorage
     function loadFriends(){
       try {
         const raw = localStorage.getItem("chat_friends");
@@ -221,11 +213,11 @@
         return [];
       }
     }
+
     function saveFriends(arr){
       localStorage.setItem("chat_friends", JSON.stringify(arr));
     }
 
-    // --- Fix 2 helpers: normalize + sanitize on load and after setting name ---
     const norm = s => (s ?? "").trim().toLowerCase();
     const myNameNorm = () => norm(nameEl.value || localStorage.getItem("chat_name") || "Anonymous");
 
@@ -241,13 +233,23 @@
     }
 
     sanitizeFriends();
-    // --- end Fix 2 ---
-
-    const ws = new WebSocket("ws://localhost:6790"); // <-- make sure this matches your server port!
 
     function setStatus(kind, text){
       dot.className = "dot" + (kind ? " " + kind : "");
       statusText.textContent = text;
+    }
+
+    function getDefaultWsUrl(){
+      const pageHost = window.location.hostname || localStorage.getItem("chat_server_host") || "localhost";
+      return `ws://${pageHost}:${WS_PORT}`;
+    }
+
+    function getServerLabel(wsUrl){
+      try {
+        return new URL(wsUrl).host;
+      } catch {
+        return wsUrl;
+      }
     }
 
     function addMessage({type, room, name, text, isMe=false}){
@@ -299,13 +301,18 @@
     }
 
     function requestRooms(){
-      if(!connected) return;
+      if(!connected || !ws) return;
       ws.send(JSON.stringify({type:"list"}));
     }
 
     function requestPresence(){
-      if(!connected) return;
+      if(!connected || !ws) return;
       ws.send(JSON.stringify({type:"who"}));
+    }
+
+    function requestDiscovery(){
+      if(!connected || !ws) return;
+      ws.send(JSON.stringify({type:"discover"}));
     }
 
     function renderRooms(list){
@@ -326,8 +333,21 @@
         btn.className = "roomBtn" + (r.name === currentRoom ? " active" : "");
         btn.type = "button";
 
-        const left = document.createElement("span");
-        left.textContent = r.name;
+        const left = document.createElement("div");
+        left.style.display = "flex";
+        left.style.flexDirection = "column";
+        left.style.alignItems = "flex-start";
+
+        const roomName = document.createElement("span");
+        roomName.textContent = r.name;
+
+        const roomMeta = document.createElement("span");
+        roomMeta.style.fontSize = "11px";
+        roomMeta.style.color = "var(--muted)";
+        roomMeta.textContent = `${r.source === "remote" ? "LAN" : "Local"} • ${r.host || "unknown host"}`;
+
+        left.appendChild(roomName);
+        left.appendChild(roomMeta);
 
         const badge = document.createElement("span");
         badge.className = "badge";
@@ -338,7 +358,7 @@
 
         btn.addEventListener("click", () => {
           roomEl.value = r.name;
-          joinRoom(r.name);
+          joinRoom(r);
         });
 
         roomsEl.appendChild(btn);
@@ -389,7 +409,6 @@
         });
 
         actions.appendChild(del);
-
         row.appendChild(left);
         row.appendChild(actions);
         friendsEl.appendChild(row);
@@ -398,13 +417,108 @@
 
     renderFriends();
 
-    function joinRoom(roomOverride=null){
-      if(!connected){
+    function connectToServer(wsUrl, roomToJoin=null){
+      currentServerUrl = wsUrl;
+      localStorage.setItem("chat_server_url", wsUrl);
+
+      try {
+        localStorage.setItem("chat_server_host", new URL(wsUrl).hostname);
+      } catch {}
+
+      pendingJoinRoom = roomToJoin;
+      connected = false;
+      setStatus("", `Connecting to ${getServerLabel(wsUrl)}…`);
+      enableChatUI(false);
+
+      if(ws){
+        ws.onopen = null;
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
+        try { ws.close(); } catch {}
+      }
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        connected = true;
+        setStatus("good", `Connected to ${getServerLabel(currentServerUrl)}`);
+        addMessage({type:"system", text:`Connected to server ${getServerLabel(currentServerUrl)}.`});
+        requestRooms();
+        requestDiscovery();
+        requestPresence();
+        if(pendingJoinRoom){
+          const roomSelection = pendingJoinRoom;
+          pendingJoinRoom = null;
+          sendJoin(roomSelection.name || roomSelection);
+        }
+      };
+
+      ws.onclose = () => {
+        connected = false;
+        setStatus("bad", `Disconnected from ${getServerLabel(currentServerUrl)}`);
+        addMessage({type:"system", text:"Disconnected from server."});
+        enableChatUI(false);
+        onlineNames = new Set();
+        renderFriends();
+      };
+
+      ws.onerror = () => {
+        setStatus("bad", `WebSocket error on ${getServerLabel(currentServerUrl)}`);
+        addMessage({type:"system", text:"WebSocket error. Make sure the Python server is running on the selected host."});
+        enableChatUI(false);
+      };
+
+      ws.onmessage = (e) => {
+        try{
+          const data = JSON.parse(e.data);
+
+          if(data.type === "rooms"){
+            renderRooms(data.rooms || []);
+            return;
+          }
+
+          if(data.type === "presence"){
+            onlineNames = new Set((data.online || []).map(String));
+            renderFriends();
+            return;
+          }
+
+          if(data.type === "system"){
+            addMessage({type:"system", text: data.text || ""});
+            requestRooms();
+            return;
+          }
+
+          if(data.type === "chat"){
+            const myName = (nameEl.value || "Anonymous").trim() || "Anonymous";
+            const isMe = data.room === currentRoom && (data.name || "") === myName;
+            addMessage({type:"chat", room:data.room, name:data.name, text:data.text, isMe});
+            return;
+          }
+
+          if(data.type === "image"){
+            const myName = (nameEl.value || "Anonymous").trim() || "Anonymous";
+            const isMe = data.room === currentRoom && (data.name || "") === myName;
+            addImageMessage({ room: data.room, name: data.name, dataUrl: data.dataUrl, isMe });
+            return;
+          }
+
+          addMessage({type:"system", text:e.data});
+        }catch{
+          addMessage({type:"system", text:e.data});
+        }
+      };
+    }
+
+    function sendJoin(roomName){
+      if(!connected || !ws){
         addMessage({type:"system", text:"Not connected yet."});
         return;
       }
+
       const name = (nameEl.value || "Anonymous").trim() || "Anonymous";
-      const room = (roomOverride ?? roomEl.value ?? "").trim();
+      const room = String(roomName || roomEl.value || "").trim();
       if(!room){
         addMessage({type:"system", text:"Room name cannot be empty."});
         roomEl.focus();
@@ -414,27 +528,43 @@
       localStorage.setItem("chat_name", name);
       localStorage.setItem("chat_room", room);
 
-      // --- Fix 2: remove self from stored friends after name is known ---
       sanitizeFriends();
       renderFriends();
-      // --- end Fix 2 ---
 
       ws.send(JSON.stringify({type:"join", name, room}));
 
       currentRoom = room;
       roomTitle.textContent = `Room: ${room}`;
-      roomSub.textContent = `Signed in as ${name}`;
+      roomSub.textContent = `Signed in as ${name} on ${getServerLabel(currentServerUrl)}`;
       enableChatUI(true);
 
       messagesEl.innerHTML = "";
       addMessage({type:"system", text:`Switched to room: ${room}`});
 
       requestRooms();
-      // Don't auto-spam "who" here — server should push presence anyway.
+    }
+
+    function joinRoom(roomOverride=null){
+      const targetRoom = roomOverride && typeof roomOverride === "object" ? roomOverride : null;
+      const roomName = String(targetRoom?.name ?? roomOverride ?? roomEl.value ?? "").trim();
+
+      if(!roomName){
+        addMessage({type:"system", text:"Room name cannot be empty."});
+        roomEl.focus();
+        return;
+      }
+
+      const targetServerUrl = targetRoom?.ws_url || currentServerUrl || getDefaultWsUrl();
+      if(targetServerUrl !== currentServerUrl || !connected){
+        connectToServer(targetServerUrl, {name: roomName});
+        return;
+      }
+
+      sendJoin(roomName);
     }
 
     function sendMsg(){
-      if(!connected){
+      if(!connected || !ws){
         addMessage({type:"system", text:"Not connected."});
         return;
       }
@@ -451,78 +581,17 @@
       m.focus();
     }
 
-    ws.onopen = () => {
-      connected = true;
-      setStatus("good", "Connected");
-      addMessage({type:"system", text:"Connected to server."});
-      requestRooms();
-      requestPresence(); // one-time on connect is fine
-    };
-
-    ws.onclose = () => {
-      connected = false;
-      setStatus("bad", "Disconnected");
-      addMessage({type:"system", text:"Disconnected from server."});
-      enableChatUI(false);
-      onlineNames = new Set();
-      renderFriends();
-    };
-
-    ws.onerror = () => {
-      setStatus("bad", "WebSocket error");
-      addMessage({type:"system", text:"WebSocket error. Is server.py running?"});
-      enableChatUI(false);
-    };
-
-    // ONE onmessage handler: rooms + system + chat + image + presence
-    ws.onmessage = (e) => {
-      try{
-        const data = JSON.parse(e.data);
-
-        if(data.type === "rooms"){
-          renderRooms(data.rooms || []);
-          return;
-        }
-
-        if(data.type === "presence"){
-          onlineNames = new Set((data.online || []).map(String));
-          renderFriends();
-          return;
-        }
-
-        if(data.type === "system"){
-          addMessage({type:"system", text: data.text || ""});
-          // refresh rooms only; DO NOT call requestPresence() here
-          requestRooms();
-          return;
-        }
-
-        if(data.type === "chat"){
-          const myName = (nameEl.value || "Anonymous").trim() || "Anonymous";
-          const isMe = data.room === currentRoom && (data.name || "") === myName;
-          addMessage({type:"chat", room:data.room, name:data.name, text:data.text, isMe});
-          return;
-        }
-
-        if (data.type === "image") {
-          const myName = (nameEl.value || "Anonymous").trim() || "Anonymous";
-          const isMe = data.room === currentRoom && (data.name || "") === myName;
-          addImageMessage({ room: data.room, name: data.name, dataUrl: data.dataUrl, isMe });
-          return;
-        }
-
-        addMessage({type:"system", text:e.data});
-      }catch{
-        addMessage({type:"system", text:e.data});
-      }
-    };
-
     joinBtn.addEventListener("click", () => joinRoom());
-    refreshBtn.addEventListener("click", requestRooms);
+    refreshBtn.addEventListener("click", () => {
+      requestRooms();
+      requestDiscovery();
+    });
     sendBtn.addEventListener("click", sendMsg);
     whoBtn.addEventListener("click", requestPresence);
 
-    m.addEventListener("keydown", (e) => { if(e.key === "Enter") sendMsg(); });
+    m.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") sendMsg();
+    });
 
     addFriendBtn.addEventListener("click", () => {
       const f = friendInput.value.trim();
@@ -531,10 +600,8 @@
       friends.sort((a,b) => a.localeCompare(b));
       saveFriends(friends);
       friendInput.value = "";
-      // --- Fix 2: in case they typed their own name, sanitize right away ---
       sanitizeFriends();
       renderFriends();
-      // ---
       requestPresence();
     });
 
@@ -542,10 +609,8 @@
       if(e.key === "Enter") addFriendBtn.click();
     });
 
-    // Paste image from clipboard
     document.addEventListener("paste", (event) => {
-      if (!currentRoom) return;
-      if (m.disabled) return;
+      if (!currentRoom || m.disabled || !ws || !connected) return;
 
       const items = event.clipboardData?.items;
       if (!items) return;
@@ -572,6 +637,9 @@
         }
       }
     });
+
+    currentServerUrl = localStorage.getItem("chat_server_url") || getDefaultWsUrl();
+    connectToServer(currentServerUrl);
   </script>
 </body>
 </html>

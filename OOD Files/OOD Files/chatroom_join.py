@@ -47,7 +47,6 @@ class ChatRoomJoiner:
             self.room_manager,
             {"type": "system", "text": f"{name} joined {room_name}"},
         )
-        await self.io_handler.broadcast_rooms_to_all(self.session_manager, self.room_manager)
         await self.io_handler.broadcast_presence_to_all(self.session_manager)
 
     async def leave_current_room(self, ws: Any) -> None:

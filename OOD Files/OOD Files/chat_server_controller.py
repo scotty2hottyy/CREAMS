@@ -5,6 +5,7 @@ import websockets
 
 from chatroom_host import ChatRoomHost
 from chatroom_join import ChatRoomJoiner
+from discovery_service import DiscoveryService
 from message_handler import MessageHandler
 from session_manager import SessionManager
 from website_io import WebsiteIO
@@ -17,6 +18,7 @@ class ChatServerController:
         self.io_handler = WebsiteIO()
         self.session_manager = SessionManager()
         self.room_manager = ChatRoomHost()
+        self.discovery_service = DiscoveryService(self.room_manager, ws_port=6790)
         self.join_manager = ChatRoomJoiner(
             self.io_handler,
             self.room_manager,
@@ -28,10 +30,19 @@ class ChatServerController:
             self.session_manager,
         )
 
+    async def start(self) -> None:
+        await self.discovery_service.start()
+
+    async def stop(self) -> None:
+        await self.discovery_service.stop()
+
+    def get_rooms_payload(self) -> list[dict[str, Any]]:
+        return self.discovery_service.get_combined_rooms()
+
     async def handle_connection(self, ws: Any) -> None:
         self.session_manager.register(ws)
 
-        await self.io_handler.send_rooms(ws, self.room_manager)
+        await self.io_handler.send_rooms(ws, self.get_rooms_payload())
         await self.io_handler.send_presence(ws, self.session_manager)
         await self.io_handler.broadcast_presence_to_all(self.session_manager)
 
@@ -43,7 +54,10 @@ class ChatServerController:
         finally:
             await self.join_manager.leave_current_room(ws)
             self.session_manager.unregister(ws)
-            await self.io_handler.broadcast_rooms_to_all(self.session_manager, self.room_manager)
+            await self.io_handler.broadcast_rooms_to_all(
+                self.session_manager,
+                self.get_rooms_payload(),
+            )
             await self.io_handler.broadcast_presence_to_all(self.session_manager)
 
     async def route_message(self, ws: Any, raw_message: str) -> None:
@@ -56,11 +70,16 @@ class ChatServerController:
         message_type = data.get("type")
 
         if message_type == "list":
-            await self.io_handler.send_rooms(ws, self.room_manager)
+            await self.io_handler.send_rooms(ws, self.get_rooms_payload())
             return
 
         if message_type == "who":
             await self.io_handler.send_presence(ws, self.session_manager)
+            return
+
+        if message_type == "discover":
+            await self.discovery_service.discover_now()
+            await self.io_handler.send_rooms(ws, self.get_rooms_payload())
             return
 
         if message_type == "join":
@@ -68,6 +87,10 @@ class ChatServerController:
                 ws,
                 data.get("name") or "Anonymous",
                 data.get("room") or "",
+            )
+            await self.io_handler.broadcast_rooms_to_all(
+                self.session_manager,
+                self.get_rooms_payload(),
             )
             return
 
