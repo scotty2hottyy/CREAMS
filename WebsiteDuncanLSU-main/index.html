@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="ngrok-skip-browser-warning" content="true">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Multi-Room Chat</title>
+  <style>
+    :root {
+      --bg:#0b1220; --card:#0f1b33; --text:#e8eefc; --muted:#a8b3d6;
+      --border:rgba(255,255,255,.10); --shadow:0 20px 60px rgba(0,0,0,.35);
+      --accent:#6ea8ff; --accent2:#7c5cff; --good:#2ee59d; --bad:#ff5c7a; --warn:#ffcc66;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 10% 10%, rgba(110,168,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(124,92,255,.18), transparent 60%),
+        var(--bg);
+    }
+    .screen { display: none; }
+    .screen.active { display: flex; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden;
+    }
+    label { font-size: 12px; color: var(--muted); display: block; margin: 14px 0 7px; }
+    input {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(0,0,0,.18); color: var(--text); outline: none; font-size: 14px;
+    }
+    input:focus { border-color: rgba(110,168,255,.55); box-shadow: 0 0 0 4px rgba(110,168,255,.14); }
+    .row { display: flex; gap: 10px; margin-top: 12px; }
+    button {
+      border: 0; cursor: pointer; color: var(--text); font-weight: 700; font-size: 14px;
+      padding: 11px 16px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 10px 25px rgba(124,92,255,.22);
+      white-space: nowrap;
+    }
+    button.secondary { background: rgba(255,255,255,.07); box-shadow: none; border: 1px solid var(--border); }
+    button.ghost { background: none; box-shadow: none; border: none; padding: 8px 10px; color: var(--muted); font-weight: 600; }
+    button.ghost:hover { color: var(--text); }
+    button.danger { background: rgba(255,92,122,.15); box-shadow: none; border: 1px solid rgba(255,92,122,.3); color: var(--bad); }
+    button.success { background: rgba(46,229,157,.15); box-shadow: none; border: 1px solid rgba(46,229,157,.3); color: var(--good); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .badge { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+    .badge.alert { background: var(--accent2); color: #fff; border-color: transparent; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--warn); flex-shrink: 0; }
+    .dot.good { background: var(--good); } .dot.bad { background: var(--bad); }
+
+    /* ── ACCOUNT SCREEN ── */
+    #accountScreen { min-height: 100vh; justify-content: center; align-items: center; padding: 24px; }
+    .account-card {
+      width: min(420px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow);
+      padding: 36px;
+    }
+    .account-logo {
+      width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+    .account-card h1 { margin: 0 0 4px; font-size: 22px; text-align: center; }
+    .account-card .tagline { margin: 0 0 24px; font-size: 13px; color: var(--muted); text-align: center; }
+    .account-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+    .account-tab {
+      flex: 1; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+      background: none; border-radius: 0; box-shadow: none;
+      border-left: none; border-right: none; border-top: none; text-align: center;
+    }
+    .account-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .account-form { display: none; flex-direction: column; gap: 0; }
+    .account-form.visible { display: flex; }
+    .account-form label { font-size: 12px; color: var(--muted); display: block; margin: 12px 0 6px; }
+    .account-form label:first-child { margin-top: 0; }
+    .account-submit { margin-top: 18px; width: 100%; padding: 13px; font-size: 15px; }
+    .account-error {
+      margin-top: 12px; padding: 10px 14px; border-radius: 10px; font-size: 13px;
+      background: rgba(255,92,122,.10); border: 1px solid rgba(255,92,122,.25); color: var(--bad);
+      display: none;
+    }
+    .account-error.visible { display: block; }
+    .random-row { display: flex; gap: 8px; margin-top: 6px; }
+    .random-row input { flex: 1; margin: 0; }
+
+    /* ── LOBBY ── */
+    #lobbyScreen { min-height: 100vh; justify-content: center; align-items: flex-start; padding: 32px 24px; }
+    .lobby-wrap { width: min(900px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .lobby-hero { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding-bottom: 4px; }
+    .lobby-logo { width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+    .lobby-hero h1 { margin: 0; font-size: 22px; }
+    .lobby-hero p  { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
+    .lobby-status { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+
+    .lobby-identity { padding: 22px; }
+    .lobby-identity h2 { margin: 0 0 4px; font-size: 15px; }
+    .lobby-identity p  { margin: 0 0 6px; font-size: 12px; color: var(--muted); }
+
+    .lobby-rooms-card { display: flex; flex-direction: column; }
+    .lobby-rooms-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+    .lobby-rooms-head h2 { margin: 0; font-size: 15px; }
+    .lobby-rooms-body { padding: 14px 20px; flex: 1; overflow-y: auto; max-height: 280px; }
+    .rooms { display: flex; flex-direction: column; gap: 8px; }
+    .roomBtn {
+      width: 100%; text-align: left; padding: 12px 14px; border-radius: 12px;
+      border: 1px solid var(--border); background: rgba(255,255,255,.04);
+      color: var(--text); display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; font-size: 14px;
+    }
+    .roomBtn:hover { background: rgba(255,255,255,.08); }
+    .roomBtn.active { border-color: rgba(110,168,255,.40); background: linear-gradient(135deg, rgba(110,168,255,.18), rgba(124,92,255,.14)); }
+
+    .lobby-create { padding: 14px 20px 20px; border-top: 1px solid var(--border); }
+    .lobby-create summary { cursor: pointer; font-size: 13px; color: var(--muted); user-select: none; list-style: none; display: flex; align-items: center; gap: 6px; }
+    .lobby-create summary::before { content: "＋"; font-size: 14px; }
+    details[open] .lobby-create summary::before { content: "−"; }
+
+    /* Friends card — full width, tabbed */
+    .lobby-friends { grid-column: 1 / -1; }
+    .friends-tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .friends-tab {
+      padding: 14px 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+      display: flex; align-items: center; gap: 8px; background: none; border-radius: 0;
+      box-shadow: none; border-left: none; border-right: none; border-top: none;
+    }
+    .friends-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .friends-tab-panel { display: none; padding: 18px 20px; }
+    .friends-tab-panel.active { display: block; }
+
+    .friend-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(255,255,255,.04); margin-bottom: 8px;
+    }
+    .friend-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+    .pill { width: 10px; height: 10px; border-radius: 999px; background: var(--bad); box-shadow: 0 0 0 4px rgba(255,92,122,.10); flex-shrink: 0; }
+    .pill.on { background: var(--good); box-shadow: 0 0 0 4px rgba(46,229,157,.10); }
+    .pill.lobby { background: var(--accent); box-shadow: 0 0 0 4px rgba(110,168,255,.15); }
+    .friend-info { min-width: 0; }
+    .friend-name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .friend-room { font-size: 11px; color: var(--accent); margin-top: 2px; }
+    .friend-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .friend-actions button { padding: 6px 10px; font-size: 12px; }
+
+    .add-friend-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .add-friend-row input { flex: 1; margin: 0; }
+
+    .empty-state { font-size: 13px; color: var(--muted); padding: 8px 4px; }
+
+    @media (max-width: 700px) {
+      .lobby-wrap { grid-template-columns: 1fr; }
+      .lobby-hero, .lobby-status, .lobby-friends { grid-column: 1; }
+    }
+
+    /* ── CHAT SCREEN ── */
+    #chatScreen { height: 100vh; flex-direction: column; }
+    .chat-topbar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+      border-bottom: 1px solid var(--border); background: rgba(0,0,0,.25);
+      backdrop-filter: blur(12px); flex-shrink: 0;
+    }
+    .chat-topbar-logo { width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+    .chat-topbar-title { font-size: 15px; font-weight: 700; }
+    .chat-topbar-sub   { font-size: 12px; color: var(--muted); }
+    .chat-topbar-spacer { flex: 1; }
+    .chat-online-pill { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+    .chat-body { display: flex; flex: 1; overflow: hidden; }
+
+    .chat-sidebar {
+      width: 230px; flex-shrink: 0; border-right: 1px solid var(--border);
+      background: rgba(0,0,0,.15); display: flex; flex-direction: column; overflow-y: auto;
+    }
+    .sidebar-section { padding: 14px; border-bottom: 1px solid var(--border); }
+    .sidebar-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .sidebar-room {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 10px; cursor: pointer; font-size: 13px; border: 1px solid transparent;
+    }
+    .sidebar-room:hover { background: rgba(255,255,255,.06); }
+    .sidebar-room.active { background: linear-gradient(135deg, rgba(110,168,255,.18), rgba(124,92,255,.14)); border-color: rgba(110,168,255,.30); }
+    .sidebar-friend { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; font-size: 13px; }
+    .sidebar-friend-info { min-width: 0; }
+    .sidebar-friend-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-friend-room { font-size: 11px; color: var(--accent); }
+
+    .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+    .msg { max-width: 72%; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,.05); white-space: pre-wrap; word-break: break-word; }
+    .msg.me { margin-left: auto; background: linear-gradient(135deg, rgba(110,168,255,.20), rgba(124,92,255,.18)); border-color: rgba(110,168,255,.30); }
+    .msg.system { max-width: 100%; border-style: dashed; color: var(--muted); background: rgba(255,255,255,.03); text-align: center; font-size: 12px; }
+    .meta { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .composer { display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,.15); flex-shrink: 0; }
+    .composer input { flex: 1; background: rgba(0,0,0,.22); }
+
+    @media (max-width: 700px) { .chat-sidebar { display: none; } }
+
+    /* ── PASSWORD MODAL ── */
+    #pwModal { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); justify-content: center; align-items: center; }
+    #pwModal.open { display: flex; }
+    #pwBox { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 28px; width: min(360px, 90vw); }
+    #pwBox h3 { margin: 0 0 6px; font-size: 16px; }
+    #pwBox p  { margin: 0 0 16px; font-size: 13px; color: var(--muted); }
+    #pwBox input { margin-bottom: 14px; }
+    #pwBox .row { margin-top: 0; }
+
+    /* ── FRIEND REQUEST TOAST ── */
+    #toastContainer { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+    .toast {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: var(--shadow); padding: 16px 18px; width: 300px;
+      animation: slideIn .25s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .toast-body  { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .toast-actions { display: flex; gap: 8px; }
+    .toast-actions button { padding: 7px 14px; font-size: 13px; flex: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════ ACCOUNT ══════════════ -->
+  <div id="accountScreen" class="screen active">
+    <div class="card account-card">
+      <div class="account-logo"></div>
+      <h1>Chat Rooms</h1>
+      <p class="tagline">Sign in or create an account to get started</p>
+
+      <div class="account-tabs">
+        <button class="account-tab active" data-atab="login">Sign In</button>
+        <button class="account-tab" data-atab="register">Create Account</button>
+      </div>
+
+      <!-- Sign in -->
+      <div id="atab-login" class="account-form visible">
+        <label for="loginUser">Username</label>
+        <input id="loginUser" type="text" placeholder="Your username" autocomplete="username" />
+        <label for="loginPass">Password</label>
+        <input id="loginPass" type="password" placeholder="Your password" autocomplete="current-password" />
+        <button id="loginBtn" class="account-submit">Sign In</button>
+        <div id="loginError" class="account-error"></div>
+      </div>
+
+      <!-- Register -->
+      <div id="atab-register" class="account-form">
+        <label for="regUser">Username</label>
+        <div class="random-row">
+          <input id="regUser" type="text" placeholder="Choose a username" autocomplete="username" />
+          <button id="regRandBtn" class="secondary" title="Random name">🎲</button>
+        </div>
+        <label for="regPass">Password</label>
+        <input id="regPass" type="password" placeholder="Choose a password" autocomplete="new-password" />
+        <label for="regPass2">Confirm password</label>
+        <input id="regPass2" type="password" placeholder="Repeat password" autocomplete="new-password" />
+        <button id="registerBtn" class="account-submit">Create Account</button>
+        <div id="registerError" class="account-error"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════ LOBBY ══════════════ -->
+  <div id="lobbyScreen" class="screen">
+    <div class="lobby-wrap">
+
+      <div class="lobby-hero">
+        <div class="lobby-logo"></div>
+        <div><h1>Chat Rooms</h1><p>Pick a username and jump into a room</p></div>
+      </div>
+      <div class="lobby-status">
+        <span id="dot" class="dot"></span>
+        <span id="statusText">Connecting…</span>
+      </div>
+
+      <!-- Identity card (read-only after login) -->
+      <div class="card">
+        <div class="lobby-identity">
+          <h2>Welcome back 👋</h2>
+          <p>You're logged in and ready to chat.</p>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px 14px;border-radius:12px;background:rgba(110,168,255,.08);border:1px solid rgba(110,168,255,.2);">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));flex-shrink:0;"></div>
+            <div>
+              <div id="lobbyUsername" style="font-size:15px;font-weight:700;"></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Logged in</div>
+            </div>
+          </div>
+          <button id="logoutBtn" class="secondary" style="width:100%;margin-top:14px;font-size:13px;">Sign out</button>
+        </div>
+      </div>
+
+      <!-- Rooms card -->
+      <div class="card lobby-rooms-card">
+        <div class="lobby-rooms-head">
+          <h2>Rooms</h2>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge" id="roomsCount">0</span>
+            <button id="refreshBtn" class="ghost">↻ Refresh</button>
+          </div>
+        </div>
+        <div class="lobby-rooms-body">
+          <div id="rooms" class="rooms"></div>
+        </div>
+        <div class="lobby-create">
+          <details id="createDetails">
+            <summary>Create a new room</summary>
+            <div style="margin-top:12px;">
+              <label for="room">Room name</label>
+              <input id="room" type="text" placeholder="e.g. Math101" />
+              <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                <label style="margin:0;display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;">
+                  <input type="checkbox" id="lockToggle" style="width:auto;accent-color:var(--accent2);" />
+                  <span style="font-size:12px;color:var(--muted);">Password-protect</span>
+                </label>
+              </div>
+              <div id="roomPasswordWrap" style="display:none;margin-top:8px;">
+                <label for="roomPassword" style="margin-top:0">Room password</label>
+                <input id="roomPassword" type="password" placeholder="Set a password" />
+              </div>
+              <div class="row"><button id="joinBtn" style="width:100%">Create &amp; Join</button></div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- Friends card — tabbed -->
+      <div class="card lobby-friends">
+        <div class="friends-tabs">
+          <button class="friends-tab active" data-tab="friends">
+            Friends <span class="badge" id="friendsCount">0</span>
+          </button>
+          <button class="friends-tab" data-tab="requests">
+            Requests <span class="badge" id="requestsBadge" style="display:none">0</span>
+          </button>
+        </div>
+
+        <!-- Friends tab -->
+        <div class="friends-tab-panel active" id="tabFriends">
+          <div class="add-friend-row">
+            <input id="friendInput" type="text" placeholder="Find someone to add…" />
+            <button id="addFriendBtn">Send Request</button>
+          </div>
+          <div id="friendsList"></div>
+        </div>
+
+        <!-- Requests tab -->
+        <div class="friends-tab-panel" id="tabRequests">
+          <div id="requestsList"><p class="empty-state">No pending friend requests.</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════ CHAT ══════════════ -->
+  <div id="chatScreen" class="screen">
+    <div class="chat-topbar">
+      <div class="chat-topbar-logo"></div>
+      <div>
+        <div class="chat-topbar-title" id="chatRoomTitle">Room</div>
+        <div class="chat-topbar-sub"   id="chatRoomSub">—</div>
+      </div>
+      <div class="chat-topbar-spacer"></div>
+      <div class="chat-online-pill" id="chatOnlinePill">0 online</div>
+      <button id="leaveChatBtn" class="secondary">← Leave</button>
+    </div>
+    <div class="chat-body">
+      <div class="chat-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Rooms</div>
+          <div id="sidebarRooms"></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Friends</div>
+          <div id="sidebarFriends"></div>
+        </div>
+      </div>
+      <div class="chat-main">
+        <div id="messages" class="messages"></div>
+        <div class="composer">
+          <input id="m" type="text" placeholder="Type a message… (paste images too)" disabled />
+          <button id="sendBtn" disabled>Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password modal -->
+  <div id="pwModal">
+    <div id="pwBox">
+      <h3>🔒 Password required</h3>
+      <p id="pwModalSub">Enter the password to join this room.</p>
+      <label for="pwInput">Password</label>
+      <input id="pwInput" type="password" placeholder="Room password" />
+      <div class="row">
+        <button id="pwConfirmBtn">Join room</button>
+        <button id="pwCancelBtn" class="secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container for incoming friend requests -->
+  <div id="toastContainer"></div>
+
+  <!-- Hidden input keeps nameEl working for joinRoom/sendMsg -->
+  <input id="name" type="hidden" />
+
+  <script src="website.js"></script>
+</body>
+</html>
