@@ -1,10 +1,11 @@
-// ═══════════════════════════════════════════════════════════════
-//  MessageFactory — builds message and UI DOM elements
-//  Factory Pattern: one place responsible for creating all
-//  message-related DOM structures
-// ═══════════════════════════════════════════════════════════════
+/**
+ * Course: csc3380
+ * Final Project
+ * Instructor: Dr. Duncan
+ * Date: 2026-04-30
+ */
 class MessageFactory {
-  /** Build a chat or system message element. */
+
   static createMessage({ type, name, text, isMe = false }) {
     const div = document.createElement("div");
     div.className = "msg"
@@ -24,7 +25,7 @@ class MessageFactory {
     return div;
   }
 
-  /** Build an image message element. */
+
   static createImageMessage({ name, dataUrl, isMe }) {
     const div = document.createElement("div");
     div.className = "msg" + (isMe ? " me" : "");
@@ -47,7 +48,7 @@ class MessageFactory {
     return div;
   }
 
-  /** Build a room button for the lobby list. */
+  
   static createRoomButton(r, currentRoom, onClick) {
     const btn = document.createElement("button");
     btn.className = "roomBtn" + (r.name === currentRoom ? " active" : "");
@@ -66,7 +67,7 @@ class MessageFactory {
     return btn;
   }
 
-  /** Build a sidebar room entry. */
+
   static createSidebarRoom(r, currentRoom, onClick) {
     const div     = document.createElement("div");
     div.className = "sidebar-room" + (r.name === currentRoom ? " active" : "");
@@ -84,7 +85,7 @@ class MessageFactory {
     return div;
   }
 
-  /** Build a friend row for the friends list. */
+
   static createFriendRow(f, currentRoom, onJoin) {
     const row     = document.createElement("div");
     row.className = "friend-row";
@@ -129,7 +130,7 @@ class MessageFactory {
     return row;
   }
 
-  /** Build a friend request row. */
+
   static createRequestRow(fromName, onAccept, onDecline) {
     const row     = document.createElement("div");
     row.className = "friend-row";
@@ -161,7 +162,7 @@ class MessageFactory {
     return row;
   }
 
-  /** Build a sidebar friend entry. */
+
   static createSidebarFriend(f) {
     const sf     = document.createElement("div");
     sf.className = "sidebar-friend";
@@ -188,7 +189,7 @@ class MessageFactory {
     return sf;
   }
 
-  // Private helper — shared pill CSS class logic
+
   static _pillClass(status) {
     if (status === "in_room")  return "pill on";
     if (status === "in_lobby") return "pill lobby";
@@ -196,10 +197,10 @@ class MessageFactory {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  ScreenManager — controls which screen is visible
-//  Singleton Pattern: only one ScreenManager should ever exist
-// ═══════════════════════════════════════════════════════════════
+
+
+
+
 class ScreenManager {
   constructor() {
     if (ScreenManager._instance) return ScreenManager._instance;
@@ -233,9 +234,9 @@ class ScreenManager {
 }
 ScreenManager._instance = null;
 
-// ═══════════════════════════════════════════════════════════════
-//  AccountManager — registration, login, logout
-// ═══════════════════════════════════════════════════════════════
+
+
+
 class AccountManager {
   constructor(screenManager, onLogin) {
     this.screenManager = screenManager;
@@ -337,9 +338,9 @@ class AccountManager {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  NameGenerator — random username utility (static-only class)
-// ═══════════════════════════════════════════════════════════════
+
+
+
 class NameGenerator {
   static ADJECTIVES = [
     "Swift","Neon","Cosmic","Phantom","Lucky","Blaze","Shadow","Silver",
@@ -362,10 +363,10 @@ class NameGenerator {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  MessageRenderer — appends messages to the chat panel
-//  Uses MessageFactory to create elements — no DOM building here
-// ═══════════════════════════════════════════════════════════════
+
+
+
+
 class MessageRenderer {
   constructor() {
     this.messagesEl = document.getElementById("messages");
@@ -381,10 +382,10 @@ class MessageRenderer {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  FriendManager — friend list, requests, toasts
-//  Uses MessageFactory to create all friend-related DOM elements
-// ═══════════════════════════════════════════════════════════════
+
+
+
+
 class FriendManager {
   constructor(onJoinRoom) {
     this.onJoinRoom       = onJoinRoom;
@@ -452,7 +453,7 @@ class FriendManager {
       this.friendsList.innerHTML = '<p class="empty-state">No friends yet. Send a request above!</p>';
       return;
     }
-    // Uses MessageFactory — FriendManager doesn't build DOM itself
+
     for (const f of this.confirmedFriends) {
       this.friendsList.appendChild(
         MessageFactory.createFriendRow(f, this.currentRoom, (room) => this.onJoinRoom(room))
@@ -516,10 +517,10 @@ class FriendManager {
   setCurrentRoom(r)   { this.currentRoom = r; }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  RoomManager — room list, sidebar, password modal
-//  Uses MessageFactory to build room button and sidebar elements
-// ═══════════════════════════════════════════════════════════════
+
+
+
+
 class RoomManager {
   constructor(onJoinRoom) {
     this.onJoinRoom  = onJoinRoom;
@@ -580,7 +581,7 @@ class RoomManager {
     }
 
     for (const r of list) {
-      // Uses MessageFactory — RoomManager doesn't build DOM itself
+      
       this.roomsEl.appendChild(
         MessageFactory.createRoomButton(r, this.currentRoom, () => {
           if (r.locked && r.name !== this.currentRoom) this._openModal(r.name);
@@ -630,14 +631,14 @@ class RoomManager {
   setCurrentRoom(r) { this.currentRoom = r; }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  ChatApp — main application controller
-//  Singleton Pattern: only one ChatApp instance can ever exist
-//  Wires all managers together and owns the WebSocket connection
-// ═══════════════════════════════════════════════════════════════
+
+
+
+
+
 class ChatApp {
   constructor() {
-    // Singleton enforcement
+
     if (ChatApp._instance) return ChatApp._instance;
     ChatApp._instance = this;
 
@@ -645,7 +646,7 @@ class ChatApp {
     this.currentRoom = null;
     this.username    = "";
 
-    // Direct DOM refs owned by ChatApp
+
     this.nameEl        = document.getElementById("name");
     this.dot           = document.getElementById("dot");
     this.statusText    = document.getElementById("statusText");
@@ -655,7 +656,7 @@ class ChatApp {
     this.chatRoomTitle = document.getElementById("chatRoomTitle");
     this.chatRoomSub   = document.getElementById("chatRoomSub");
 
-    // Instantiate all managers
+
     this.screenManager   = ScreenManager.getInstance();
     this.messageRenderer = new MessageRenderer();
 
@@ -675,12 +676,12 @@ class ChatApp {
     this.ws = new WebSocket("wss://monologue-astronaut-headrest.ngrok-free.dev");
     this._bindWebSocket();
 
-    // Chat controls
+
     this.sendBtn.addEventListener("click",      () => this._sendMessage());
     this.leaveChatBtn.addEventListener("click", () => this._leaveChat());
     this.m.addEventListener("keydown",          e => { if (e.key === "Enter") this._sendMessage(); });
 
-    // Paste image
+
     document.addEventListener("paste", e => this._handlePaste(e));
   }
 
@@ -689,7 +690,7 @@ class ChatApp {
     return ChatApp._instance;
   }
 
-  // ── Login ───────────────────────────────────────────────────
+
 
   _onLogin(username) {
     this.username = username;
@@ -697,7 +698,6 @@ class ChatApp {
     if (this.connected) this._send({ type: "set_name", name: username });
   }
 
-  // ── WebSocket ───────────────────────────────────────────────
 
   _send(payload) {
     if (this.connected) this.ws.send(JSON.stringify(payload));
@@ -790,7 +790,7 @@ class ChatApp {
     }
   }
 
-  // ── Room actions ────────────────────────────────────────────
+
 
   joinRoom(roomOverride = null, passwordOverride = null) {
     if (!this.connected) { alert("Not connected to server yet."); return; }
@@ -836,7 +836,7 @@ class ChatApp {
     });
   }
 
-  // ── Messaging ───────────────────────────────────────────────
+
 
   _sendMessage() {
     if (!this.connected || !this.currentRoom) return;
@@ -847,7 +847,7 @@ class ChatApp {
     this.m.focus();
   }
 
-  // ── Friends ─────────────────────────────────────────────────
+
 
   _sendFriendRequest() {
     const to = this.friendManager.getFriendInput();
@@ -861,14 +861,14 @@ class ChatApp {
     this.friendManager.removeRequest(fromName);
   }
 
-  // ── Status ──────────────────────────────────────────────────
+
 
   _setStatus(kind, text) {
     this.dot.className          = "dot" + (kind ? " " + kind : "");
     this.statusText.textContent = text;
   }
 
-  // ── Paste image ─────────────────────────────────────────────
+  
 
   _handlePaste(event) {
     if (!this.currentRoom || this.m.disabled) return;
@@ -891,6 +891,7 @@ class ChatApp {
 }
 ChatApp._instance = null;
 
-// ── Boot ──────────────────────────────────────────────────────
-// Singleton getInstance() used here — never call new ChatApp() directly
+
+
+
 const app = ChatApp.getInstance();
