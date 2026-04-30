@@ -66,7 +66,6 @@ class ChatRoomJoiner:
         await self.io_handler.broadcast_rooms_to_all(self.session_manager, self.room_manager)
         await self.io_handler.broadcast_presence_to_all(self.session_manager)
 
-        # Push live location update to everyone who has this user as a friend
         await self.io_handler.push_friends_updates_for(
             name, self.session_manager, self.friend_manager
         )
@@ -88,13 +87,10 @@ class ChatRoomJoiner:
         )
         await self.io_handler.broadcast_rooms_to_all(self.session_manager, self.room_manager)
 
-        # Push updated location (now None) to all of this user's friends
         await self.io_handler.push_friends_updates_for(
             current_name, self.session_manager, self.friend_manager
         )
 
-        # Push an updated friends_list back to the user who just left
-        # so their lobby view refreshes immediately
         await self.io_handler.push_friends_list_to(
             ws, current_name, self.session_manager, self.friend_manager
         )
