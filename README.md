@@ -50,7 +50,7 @@ this.ws = new WebSocket("...");
 
 5. Put inside the parentheses "wss: your ngrok url minus the https://"
 
-6. Go to the link:
+6. Go to the link: https://scotty2hottyy.github.io/CREAMS/
 
 If your ngrok URL changes, update the link in `website.js` again.
 
