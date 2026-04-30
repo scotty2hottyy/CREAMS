@@ -51,7 +51,7 @@ this.ws = new WebSocket("...");
 
 5. Replace that link with your ngrok `wss` address.
 
-6. Open `index.html` in your browser.
+6. Go to the link:
 
 If your ngrok URL changes, update the link in `website.js` again.
 
