@@ -53,7 +53,7 @@
     .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--warn); flex-shrink: 0; }
     .dot.good { background: var(--good); } .dot.bad { background: var(--bad); }
 
-    /* ── ACCOUNT SCREEN ── */
+    /*  ACCOUNT SCREEN  */
     #accountScreen { min-height: 100vh; justify-content: center; align-items: center; padding: 24px; }
     .account-card {
       width: min(420px, 100%);
@@ -122,7 +122,7 @@
     .lobby-create summary::before { content: "＋"; font-size: 14px; }
     details[open] .lobby-create summary::before { content: "−"; }
 
-    /* Friends card — full width, tabbed */
+    /* Friends card */
     .lobby-friends { grid-column: 1 / -1; }
     .friends-tabs { display: flex; border-bottom: 1px solid var(--border); }
     .friends-tab {
@@ -160,7 +160,7 @@
       .lobby-hero, .lobby-status, .lobby-friends { grid-column: 1; }
     }
 
-    /* ── CHAT SCREEN ── */
+    /*  CHAT SCREEN  */
     #chatScreen { height: 100vh; flex-direction: column; }
     .chat-topbar {
       display: flex; align-items: center; gap: 12px; padding: 12px 20px;
@@ -202,7 +202,7 @@
 
     @media (max-width: 700px) { .chat-sidebar { display: none; } }
 
-    /* ── PASSWORD MODAL ── */
+    /*  PASSWORD  */
     #pwModal { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); justify-content: center; align-items: center; }
     #pwModal.open { display: flex; }
     #pwBox { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 28px; width: min(360px, 90vw); }
@@ -211,7 +211,7 @@
     #pwBox input { margin-bottom: 14px; }
     #pwBox .row { margin-top: 0; }
 
-    /* ── FRIEND REQUEST TOAST ── */
+    /*  FRIEND REQUEST  */
     #toastContainer { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
     .toast {
       background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -227,7 +227,7 @@
 </head>
 <body>
 
-  <!-- ══════════════ ACCOUNT ══════════════ -->
+  <!--  ACCOUNT  -->
   <div id="accountScreen" class="screen active">
     <div class="card account-card">
       <div class="account-logo"></div>
@@ -267,7 +267,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ LOBBY ══════════════ -->
+  <!--  LOBBY  -->
   <div id="lobbyScreen" class="screen">
     <div class="lobby-wrap">
 
@@ -280,7 +280,7 @@
         <span id="statusText">Connecting…</span>
       </div>
 
-      <!-- Identity card (read-only after login) -->
+      <!-- Identity card -->
       <div class="card">
         <div class="lobby-identity">
           <h2>Welcome back 👋</h2>
@@ -330,7 +330,7 @@
         </div>
       </div>
 
-      <!-- Friends card — tabbed -->
+      <!-- Friends card  -->
       <div class="card lobby-friends">
         <div class="friends-tabs">
           <button class="friends-tab active" data-tab="friends">
@@ -359,7 +359,7 @@
     </div>
   </div>
 
-  <!-- ══════════════ CHAT ══════════════ -->
+  <!--  CHAT  -->
   <div id="chatScreen" class="screen">
     <div class="chat-topbar">
       <div class="chat-topbar-logo"></div>
