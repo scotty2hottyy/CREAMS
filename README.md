@@ -14,7 +14,7 @@ python app.py
 
 2. Open `website.html` in your browser.
 
-3. If you want to use `index.html` on localhost instead, open `website.js` and change the `this.ws` line to:
+3. If you want to use `index.html` on localhost instead, open `website.js` and change the `this.ws` line (675) to:
 
 ```javascript
 this.ws = new WebSocket("ws://localhost:6790");
@@ -35,16 +35,15 @@ python -m pip install websockets
 ```bash
 python app.py
 ```
+2. Create a free ngrok account at ngrok.com and follow the install steps.
 
-2. Start ngrok on port `6790`:
+3. Start ngrok on port `6790`:
 
 ```bash
 ngrok http 6790
 ```
 
-3. Copy the ngrok public URL.
-
-4. Open `website.js` and find the line that looks like:
+4. Open `website.js` and find the line (675) that looks like:
 
 ```javascript
 this.ws = new WebSocket("...");
