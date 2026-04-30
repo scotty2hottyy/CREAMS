@@ -54,3 +54,5 @@ this.ws = new WebSocket("...");
 6. Open `index.html` in your browser.
 
 If your ngrok URL changes, update the link in `website.js` again.
+
+7. To stop the server press ctrl+c in the terminal where it is running.
