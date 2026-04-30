@@ -225,7 +225,6 @@
       localStorage.setItem("chat_friends", JSON.stringify(arr));
     }
 
-    // --- Fix 2 helpers: normalize + sanitize on load and after setting name ---
     const norm = s => (s ?? "").trim().toLowerCase();
     const myNameNorm = () => norm(nameEl.value || localStorage.getItem("chat_name") || "Anonymous");
 
@@ -241,9 +240,8 @@
     }
 
     sanitizeFriends();
-    // --- end Fix 2 ---
 
-    const ws = new WebSocket("ws://localhost:6790"); // <-- make sure this matches your server port!
+    const ws = new WebSocket("ws://localhost:6790"); 
 
     function setStatus(kind, text){
       dot.className = "dot" + (kind ? " " + kind : "");
@@ -414,10 +412,10 @@
       localStorage.setItem("chat_name", name);
       localStorage.setItem("chat_room", room);
 
-      // --- Fix 2: remove self from stored friends after name is known ---
+
       sanitizeFriends();
       renderFriends();
-      // --- end Fix 2 ---
+
 
       ws.send(JSON.stringify({type:"join", name, room}));
 
@@ -430,7 +428,7 @@
       addMessage({type:"system", text:`Switched to room: ${room}`});
 
       requestRooms();
-      // Don't auto-spam "who" here — server should push presence anyway.
+
     }
 
     function sendMsg(){
@@ -456,7 +454,7 @@
       setStatus("good", "Connected");
       addMessage({type:"system", text:"Connected to server."});
       requestRooms();
-      requestPresence(); // one-time on connect is fine
+      requestPresence(); 
     };
 
     ws.onclose = () => {
@@ -474,7 +472,6 @@
       enableChatUI(false);
     };
 
-    // ONE onmessage handler: rooms + system + chat + image + presence
     ws.onmessage = (e) => {
       try{
         const data = JSON.parse(e.data);
@@ -492,7 +489,6 @@
 
         if(data.type === "system"){
           addMessage({type:"system", text: data.text || ""});
-          // refresh rooms only; DO NOT call requestPresence() here
           requestRooms();
           return;
         }
@@ -531,10 +527,8 @@
       friends.sort((a,b) => a.localeCompare(b));
       saveFriends(friends);
       friendInput.value = "";
-      // --- Fix 2: in case they typed their own name, sanitize right away ---
       sanitizeFriends();
       renderFriends();
-      // ---
       requestPresence();
     });
 
