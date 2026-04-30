@@ -49,7 +49,7 @@ ngrok http 6790
 this.ws = new WebSocket("...");
 ```
 
-5. Replace that link with your ngrok `wss` address.
+5. Put inside the parentheses "wss:'your ngrok url minus the https://'"
 
 6. Go to the link:
 
