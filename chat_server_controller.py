@@ -47,7 +47,6 @@ class ChatServerController:
             pass
         finally:
             name = self.session_manager.get_name(ws)
-            # Leave room and push friend updates BEFORE cleanup so friends list is intact
             await self.join_manager.leave_current_room(ws)
             await self.io_handler.push_friends_updates_for(name, self.session_manager, self.friend_manager)
             self.friend_manager.cleanup_user(name)
@@ -82,13 +81,10 @@ class ChatServerController:
                 return
             old_name = self.session_manager.get_name(ws)
             self.session_manager.set_name(ws, requested)
-            # Update friendship records to use the new name
             self.friend_manager.rename_user(old_name, requested)
             await self.io_handler.send_json(ws, MessageFactory.name_confirmed(requested))
             await self.io_handler.broadcast_presence_to_all(self.session_manager)
-            # Push to all friends (now stored under new name)
             await self.io_handler.push_friends_updates_for(requested, self.session_manager, self.friend_manager)
-            # Also send the user themselves an updated list
             await self.io_handler.push_friends_list_to(ws, requested, self.session_manager, self.friend_manager)
             room = self.session_manager.get_room(ws)
             if room and old_name != requested:
