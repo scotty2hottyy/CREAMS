@@ -11,14 +11,13 @@ This project can be run in two simple ways.
 ```bash
 python app.py
 ```
-
-2. Open `website.html` in your browser.
-
-3. If you want to use `index.html` on localhost instead, open `website.js` and change the `this.ws` line (675) to:
+3. If you want to only use a localhost server change the line 676 to:
 
 ```javascript
 this.ws = new WebSocket("ws://localhost:6790");
 ```
+
+2. Open `index.html` in your browser.
 
 4. Join a room and start chatting.
 
