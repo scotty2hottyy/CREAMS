@@ -2,7 +2,6 @@ class MessageFactory:
     """
     Factory Pattern: single place responsible for building all
     outgoing JSON message payloads sent to clients.
-    Keeps payload structure consistent and centralised.
     """
 
     @staticmethod
