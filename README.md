@@ -42,7 +42,7 @@ python app.py
 ngrok http 6790
 ```
 
-4. Open `website.js` and find the line (675) that looks like:
+4. Open `website.js` and find the line (676) that looks like:
 
 ```javascript
 this.ws = new WebSocket("...");
