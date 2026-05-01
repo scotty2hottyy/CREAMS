@@ -5,12 +5,9 @@ class FriendManager:
     """Handles friend requests and accepted friendships between connected users."""
 
     def __init__(self) -> None:
-        # pending_requests[to_name] = set of from_names waiting for a response
         self.pending_requests: dict[str, set[str]] = {}
-        # friendships[name] = set of friend names (mutual, stored on both sides)
         self.friendships: dict[str, set[str]] = {}
 
-    # ── Requests ──────────────────────────────────────────────────────────────
 
     def send_request(self, from_name: str, to_name: str) -> str | None:
         """Record a pending request. Returns an error string or None on success."""
@@ -49,10 +46,8 @@ class FriendManager:
 
     def cleanup_user(self, name: str) -> None:
         """Remove all pending requests involving this user when they disconnect."""
-        # Remove outgoing requests they sent
         for pending_set in self.pending_requests.values():
             pending_set.discard(name)
-        # Remove their incoming requests
         self.pending_requests.pop(name, None)
 
     def rename_user(self, old_name: str, new_name: str) -> None:
@@ -60,17 +55,14 @@ class FriendManager:
         if old_name == new_name:
             return
 
-        # Update friendships: replace old_name key with new_name
         if old_name in self.friendships:
             self.friendships[new_name] = self.friendships.pop(old_name)
 
-        # Update all friends who have old_name in their set
         for friends_set in self.friendships.values():
             if old_name in friends_set:
                 friends_set.discard(old_name)
                 friends_set.add(new_name)
 
-        # Update pending requests
         if old_name in self.pending_requests:
             self.pending_requests[new_name] = self.pending_requests.pop(old_name)
 
