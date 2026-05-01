@@ -2,7 +2,6 @@ import asyncio
 import json
 import websockets
 
-# Predefined rooms
 rooms: dict[str, set] = {
     "General": set(),
     "Math101": set(),
@@ -10,7 +9,6 @@ rooms: dict[str, set] = {
     "Gaming": set(),
 }
 
-# websocket -> {"name": str, "room": str|None}
 sessions: dict[object, dict] = {}
 
 def rooms_payload():
@@ -21,7 +19,6 @@ def rooms_payload():
     return json.dumps({"type": "rooms", "rooms": room_list})
 
 def presence_payload():
-    # Unique list of names currently connected
     names = sorted({info.get("name", "Anonymous") for info in sessions.values()})
     return json.dumps({"type": "presence", "online": names})
 
@@ -69,7 +66,6 @@ async def leave_current_room(ws):
 async def handle(ws):
     sessions[ws] = {"name": "Anonymous", "room": None}
 
-    # Send initial room list + presence list
     await send_rooms_to(ws)
     await send_presence_to(ws)
     await broadcast_presence_to_all()
@@ -101,7 +97,6 @@ async def handle(ws):
                     await ws.send(json.dumps({"type": "system", "text": f"Room '{room}' does not exist."}))
                     continue
 
-                # Optional but recommended: enforce unique names
                 if name != sessions[ws].get("name") and name_taken(name, ws):
                     await ws.send(json.dumps({
                         "type": "system",
