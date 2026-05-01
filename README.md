@@ -5,8 +5,9 @@ Make sure Python 3.10 or later is installed.
 This project can be run in two simple ways.
 
 ## Local setup
+1. Download the files from GitHub
 
-1. Run the server:
+2. Navigate to the folder with app.py and run the server in the terminal:
 
 ```bash
 python app.py
@@ -17,9 +18,9 @@ python app.py
 this.ws = new WebSocket("ws://localhost:6790");
 ```
 
-2. Open `index.html` in your browser.
+4. Open `index.html` in your browser.
 
-4. Join a room and start chatting.
+5. Join a room and start chatting.
 
 If Python says the `websockets` package is missing, install it with:
 
@@ -48,7 +49,7 @@ ngrok http 6790
 this.ws = new WebSocket("...");
 ```
 
-5. Put inside the parentheses "wss: your ngrok url minus the https://"
+5. Replace with this.ws = new WebSocket("wss://your-ngrok-url.ngrok-free.app");
 
 6. Go to the link: https://scotty2hottyy.github.io/CREAMS/
 
