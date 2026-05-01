@@ -11,6 +11,10 @@ from message_handler import MessageHandler
 from session_manager import SessionManager
 from website_io import WebsiteIO
 
+# Course: csc3380
+# Final Project
+# Instructor: Dr. Duncan
+# Date: 2026-04-30
 
 class ChatServerController:
     """Coordinates websocket connections and routes requests to the correct class."""
