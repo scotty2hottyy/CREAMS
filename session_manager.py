@@ -3,6 +3,10 @@ from typing import Any
 from models import Session
 from singleton import SingletonMeta
 
+# Course: csc3380
+# Final Project
+# Instructor: Dr. Duncan
+# Date: 2026-04-30
 
 class SessionManager(metaclass=SingletonMeta):
     """
