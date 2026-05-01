@@ -6,6 +6,10 @@ from message_factory import MessageFactory
 from session_manager import SessionManager
 from website_io import WebsiteIO
 
+# Course: csc3380
+# Final Project
+# Instructor: Dr. Duncan
+# Date: 2026-04-30
 
 class MessageHandler:
     """
