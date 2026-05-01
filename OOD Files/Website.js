@@ -1,5 +1,4 @@
-// ── Element references ────────────────────────────────────────────────────────
-
+// ── Element references 
 const accountScreen = document.getElementById("accountScreen");
 const lobbyScreen   = document.getElementById("lobbyScreen");
 const chatScreen    = document.getElementById("chatScreen");
@@ -20,7 +19,7 @@ const lobbyUsername = document.getElementById("lobbyUsername");
 const accountTabs   = document.querySelectorAll(".account-tab");
 
 // Lobby
-const nameEl            = document.getElementById("name"); // may be null — use loggedInName instead
+const nameEl            = document.getElementById("name"); 
 const roomEl            = document.getElementById("room");
 const joinBtn           = document.getElementById("joinBtn");
 const refreshBtn        = document.getElementById("refreshBtn");
@@ -75,11 +74,11 @@ let pendingRequests  = [];
 // In-memory account store { username -> password }
 const accounts = {};
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// ── WebSocket 
 
 const ws = new WebSocket("ws://localhost:6790");
 
-// ── Random name ───────────────────────────────────────────────────────────────
+// ── Random name 
 
 const ADJECTIVES = [
   "Swift","Neon","Cosmic","Phantom","Lucky","Blaze","Shadow","Silver",
@@ -100,7 +99,7 @@ function randomName() {
   return `${adj}${noun}${num}`;
 }
 
-// ── Screen management ─────────────────────────────────────────────────────────
+// ── Screen management 
 
 function showScreen(name) {
   accountScreen.classList.toggle("active", name === "account");
@@ -114,20 +113,20 @@ function showScreen(name) {
   if (name === "lobby") refreshFriendsList();
 }
 
-// ── Status dot ────────────────────────────────────────────────────────────────
+// ── Status dot 
 
 function setStatus(kind, text) {
   dot.className          = "dot" + (kind ? " " + kind : "");
   statusText.textContent = text;
 }
 
-// ── WS helpers ────────────────────────────────────────────────────────────────
+// ── WS helpers 
 
 function requestRooms()       { if (connected) ws.send(JSON.stringify({ type: "list" })); }
 function requestPresence()    { if (connected) ws.send(JSON.stringify({ type: "who" })); }
 function refreshFriendsList() { if (connected) ws.send(JSON.stringify({ type: "friends_list" })); }
 
-// ── Account screen ────────────────────────────────────────────────────────────
+// ── Account screen 
 
 accountTabs.forEach(btn => {
   btn.addEventListener("click", () => {
@@ -189,7 +188,6 @@ logoutBtn.addEventListener("click", () => {
   showScreen("account");
 });
 
-// Enter-key flow through account form fields
 loginUser.addEventListener("keydown",  e => { if (e.key === "Enter") loginPass.focus(); });
 loginPass.addEventListener("keydown",  e => { if (e.key === "Enter") loginBtn.click(); });
 regUser.addEventListener("keydown",    e => { if (e.key === "Enter") regPass.focus(); });
@@ -197,7 +195,7 @@ regPass.addEventListener("keydown",    e => { if (e.key === "Enter") regPass2.fo
 regPass2.addEventListener("keydown",   e => { if (e.key === "Enter") registerBtn.click(); });
 regRandBtn.addEventListener("click",   () => { regUser.value = randomName(); regUser.focus(); });
 
-// ── Lobby tab switching ───────────────────────────────────────────────────────
+// ── Lobby tab switching 
 
 tabBtns.forEach(btn => {
   btn.addEventListener("click", () => {
@@ -209,7 +207,7 @@ tabBtns.forEach(btn => {
 
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-// ── Friends rendering ─────────────────────────────────────────────────────────
+// ── Friends rendering 
 
 function renderFriends() {
   friendsCountEl.textContent = String(confirmedFriends.length);
@@ -341,7 +339,7 @@ function renderFriends() {
   }
 }
 
-// ── Friend actions ────────────────────────────────────────────────────────────
+// ── Friend actions 
 
 function sendFriendRequest() {
   const to = friendInput.value.trim();
@@ -372,7 +370,7 @@ function showFriendRequestToast(fromName) {
   setTimeout(() => toast.remove(), 15000);
 }
 
-// ── Room rendering ────────────────────────────────────────────────────────────
+// ── Room rendering 
 
 function renderRooms(list) {
   latestRooms              = list;
@@ -433,7 +431,7 @@ function renderSidebarRooms(list) {
   }
 }
 
-// ── Message rendering ─────────────────────────────────────────────────────────
+// ── Message rendering 
 
 function addMessage({ type, room, name, text, isMe = false }) {
   const div = document.createElement("div");
@@ -476,7 +474,7 @@ function addImageMessage({ name, dataUrl, isMe }) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ── Join / leave ──────────────────────────────────────────────────────────────
+// ── Join / leave 
 
 function joinRoom(roomOverride = null, passwordOverride = null) {
   if (!connected) { alert("Not connected to server yet."); return; }
@@ -519,7 +517,7 @@ function leaveChat() {
   refreshFriendsList();
 }
 
-// ── Send message ──────────────────────────────────────────────────────────────
+// ── Send message 
 
 function sendMsg() {
   if (!connected || !currentRoom) return;
@@ -531,7 +529,7 @@ function sendMsg() {
   m.focus();
 }
 
-// ── WebSocket events ──────────────────────────────────────────────────────────
+// ── WebSocket events 
 
 ws.onopen = () => {
   connected = true;
@@ -581,7 +579,6 @@ ws.onmessage = (e) => {
 
     if (data.type === "name_confirmed") { refreshFriendsList(); return; }
     if (data.type === "name_rejected")  {
-      // Name taken on server — show error and send back to account screen
       showScreen("account");
       showAccountError(registerError, data.reason || "Username already in use on server.");
       loggedInName = "";
@@ -603,7 +600,7 @@ ws.onmessage = (e) => {
   }
 };
 
-// ── Password modal ────────────────────────────────────────────────────────────
+// ── Password modal 
 
 let pendingLockedRoom = null;
 
@@ -629,14 +626,14 @@ pwConfirmBtn.addEventListener("click", () => {
   closePasswordModal();
 });
 
-// ── Lock toggle ───────────────────────────────────────────────────────────────
+// ── Lock toggle 
 
 lockToggle.addEventListener("change", () => {
   roomPasswordWrap.style.display = lockToggle.checked ? "block" : "none";
   if (!lockToggle.checked) roomPasswordEl.value = "";
 });
 
-// ── Main event listeners ──────────────────────────────────────────────────────
+// ── Main event listeners 
 
 joinBtn.addEventListener("click",      () => joinRoom());
 refreshBtn.addEventListener("click",   requestRooms);
@@ -648,7 +645,7 @@ m.addEventListener("keydown",           e => { if (e.key === "Enter") sendMsg();
 roomEl.addEventListener("keydown",      e => { if (e.key === "Enter") joinRoom(); });
 friendInput.addEventListener("keydown", e => { if (e.key === "Enter") addFriendBtn.click(); });
 
-// ── Paste image ───────────────────────────────────────────────────────────────
+// ── Paste image 
 
 document.addEventListener("paste", event => {
   if (!currentRoom || m.disabled) return;
