@@ -1,3 +1,8 @@
+# Course: csc3380
+# Final Project
+# Instructor: Dr. Duncan
+# Date: 2026-04-30
+
 class SingletonMeta(type):
     """
     Singleton Pattern: a metaclass that ensures only one instance
