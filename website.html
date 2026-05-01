@@ -82,7 +82,6 @@
     .composer{ display:flex; gap:10px; padding:14px 16px; border-top:1px solid var(--border); background: rgba(0,0,0,.10); }
     .composer input{ flex:1; background: rgba(0,0,0,.22); }
 
-    /* Friends */
     .friendsHead{ display:flex; align-items:center; justify-content:space-between; margin-top:18px; }
     .friendsHead h3{ margin:0; font-size:13px; }
     .friendsList{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
@@ -110,7 +109,6 @@
 <body>
   <div class="shell">
 
-    <!-- Left -->
     <section class="card">
       <div class="brand">
         <div class="logo"></div>
@@ -143,7 +141,6 @@
         </div>
         <div id="rooms" class="rooms"></div>
 
-        <!-- Friends -->
         <div class="friendsHead">
           <h3>Friends</h3>
           <span class="badge" id="friendsCount">0</span>
@@ -160,7 +157,6 @@
       </div>
     </section>
 
-    <!-- Right -->
     <section class="card">
       <div class="chatHead">
         <div>
@@ -194,7 +190,6 @@
     const roomTitle = document.getElementById("roomTitle");
     const roomSub = document.getElementById("roomSub");
 
-    // Friends UI
     const friendsEl = document.getElementById("friends");
     const friendsCountEl = document.getElementById("friendsCount");
     const friendInput = document.getElementById("friendInput");
@@ -204,14 +199,11 @@
     let connected = false;
     let currentRoom = null;
 
-    // Presence state
     let onlineNames = new Set();
 
-    // Remember per tab
     nameEl.value = localStorage.getItem("chat_name") || "";
     roomEl.value = localStorage.getItem("chat_room") || "";
 
-    // Friends list persisted in localStorage
     function loadFriends(){
       try {
         const raw = localStorage.getItem("chat_friends");
@@ -225,7 +217,6 @@
       localStorage.setItem("chat_friends", JSON.stringify(arr));
     }
 
-    // --- Fix 2 helpers: normalize + sanitize on load and after setting name ---
     const norm = s => (s ?? "").trim().toLowerCase();
     const myNameNorm = () => norm(nameEl.value || localStorage.getItem("chat_name") || "Anonymous");
 
@@ -241,9 +232,8 @@
     }
 
     sanitizeFriends();
-    // --- end Fix 2 ---
 
-    const ws = new WebSocket("ws://localhost:6790"); // <-- make sure this matches your server port!
+    const ws = new WebSocket("ws://localhost:6790"); 
 
     function setStatus(kind, text){
       dot.className = "dot" + (kind ? " " + kind : "");
@@ -414,10 +404,8 @@
       localStorage.setItem("chat_name", name);
       localStorage.setItem("chat_room", room);
 
-      // --- Fix 2: remove self from stored friends after name is known ---
       sanitizeFriends();
       renderFriends();
-      // --- end Fix 2 ---
 
       ws.send(JSON.stringify({type:"join", name, room}));
 
@@ -430,7 +418,6 @@
       addMessage({type:"system", text:`Switched to room: ${room}`});
 
       requestRooms();
-      // Don't auto-spam "who" here — server should push presence anyway.
     }
 
     function sendMsg(){
@@ -456,7 +443,7 @@
       setStatus("good", "Connected");
       addMessage({type:"system", text:"Connected to server."});
       requestRooms();
-      requestPresence(); // one-time on connect is fine
+      requestPresence(); 
     };
 
     ws.onclose = () => {
@@ -474,7 +461,6 @@
       enableChatUI(false);
     };
 
-    // ONE onmessage handler: rooms + system + chat + image + presence
     ws.onmessage = (e) => {
       try{
         const data = JSON.parse(e.data);
@@ -492,7 +478,6 @@
 
         if(data.type === "system"){
           addMessage({type:"system", text: data.text || ""});
-          // refresh rooms only; DO NOT call requestPresence() here
           requestRooms();
           return;
         }
@@ -531,10 +516,8 @@
       friends.sort((a,b) => a.localeCompare(b));
       saveFriends(friends);
       friendInput.value = "";
-      // --- Fix 2: in case they typed their own name, sanitize right away ---
       sanitizeFriends();
       renderFriends();
-      // ---
       requestPresence();
     });
 
@@ -542,7 +525,6 @@
       if(e.key === "Enter") addFriendBtn.click();
     });
 
-    // Paste image from clipboard
     document.addEventListener("paste", (event) => {
       if (!currentRoom) return;
       if (m.disabled) return;
