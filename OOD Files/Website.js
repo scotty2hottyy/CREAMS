@@ -61,7 +61,7 @@ const pwModalSub   = document.getElementById("pwModalSub");
 const pwConfirmBtn = document.getElementById("pwConfirmBtn");
 const pwCancelBtn  = document.getElementById("pwCancelBtn");
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// ── State 
 
 let connected        = false;
 let currentRoom      = null;
@@ -536,7 +536,6 @@ ws.onopen = () => {
   setStatus("good", "Connected");
   requestRooms();
   requestPresence();
-  // If already logged in when WS connects, set name on server
   if (loggedInName) ws.send(JSON.stringify({ type: "set_name", name: loggedInName }));
 };
 
