@@ -4,6 +4,10 @@ import websockets
 
 from chat_server_controller import ChatServerController
 
+# Course: csc3380
+# Final Project
+# Instructor: Dr. Duncan
+# Date: 2026-04-30
 
 async def main() -> None:
     server = ChatServerController()
