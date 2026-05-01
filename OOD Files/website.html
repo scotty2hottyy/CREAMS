@@ -52,7 +52,6 @@
     .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--warn); flex-shrink: 0; }
     .dot.good { background: var(--good); } .dot.bad { background: var(--bad); }
 
-    /* ── ACCOUNT SCREEN ── */
     #accountScreen { min-height: 100vh; justify-content: center; align-items: center; padding: 24px; }
     .account-card {
       width: min(420px, 100%);
@@ -88,7 +87,6 @@
     .random-row { display: flex; gap: 8px; margin-top: 6px; }
     .random-row input { flex: 1; margin: 0; }
 
-    /* ── LOBBY ── */
     #lobbyScreen { min-height: 100vh; justify-content: center; align-items: flex-start; padding: 32px 24px; }
     .lobby-wrap { width: min(900px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
@@ -121,7 +119,6 @@
     .lobby-create summary::before { content: "＋"; font-size: 14px; }
     details[open] .lobby-create summary::before { content: "−"; }
 
-    /* Friends card — full width, tabbed */
     .lobby-friends { grid-column: 1 / -1; }
     .friends-tabs { display: flex; border-bottom: 1px solid var(--border); }
     .friends-tab {
@@ -159,7 +156,6 @@
       .lobby-hero, .lobby-status, .lobby-friends { grid-column: 1; }
     }
 
-    /* ── CHAT SCREEN ── */
     #chatScreen { height: 100vh; flex-direction: column; }
     .chat-topbar {
       display: flex; align-items: center; gap: 12px; padding: 12px 20px;
@@ -201,7 +197,6 @@
 
     @media (max-width: 700px) { .chat-sidebar { display: none; } }
 
-    /* ── PASSWORD MODAL ── */
     #pwModal { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); justify-content: center; align-items: center; }
     #pwModal.open { display: flex; }
     #pwBox { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 28px; width: min(360px, 90vw); }
@@ -210,7 +205,6 @@
     #pwBox input { margin-bottom: 14px; }
     #pwBox .row { margin-top: 0; }
 
-    /* ── FRIEND REQUEST TOAST ── */
     #toastContainer { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
     .toast {
       background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -226,7 +220,6 @@
 </head>
 <body>
 
-  <!-- ══════════════ ACCOUNT ══════════════ -->
   <div id="accountScreen" class="screen active">
     <div class="card account-card">
       <div class="account-logo"></div>
@@ -238,7 +231,6 @@
         <button class="account-tab" data-atab="register">Create Account</button>
       </div>
 
-      <!-- Sign in -->
       <div id="atab-login" class="account-form visible">
         <label for="loginUser">Username</label>
         <input id="loginUser" type="text" placeholder="Your username" autocomplete="username" />
@@ -248,7 +240,6 @@
         <div id="loginError" class="account-error"></div>
       </div>
 
-      <!-- Register -->
       <div id="atab-register" class="account-form">
         <label for="regUser">Username</label>
         <div class="random-row">
@@ -266,7 +257,6 @@
     </div>
   </div>
 
-  <!-- ══════════════ LOBBY ══════════════ -->
   <div id="lobbyScreen" class="screen">
     <div class="lobby-wrap">
 
@@ -279,7 +269,6 @@
         <span id="statusText">Connecting…</span>
       </div>
 
-      <!-- Identity card (read-only after login) -->
       <div class="card">
         <div class="lobby-identity">
           <h2>Welcome back 👋</h2>
@@ -295,7 +284,6 @@
         </div>
       </div>
 
-      <!-- Rooms card -->
       <div class="card lobby-rooms-card">
         <div class="lobby-rooms-head">
           <h2>Rooms</h2>
@@ -329,7 +317,6 @@
         </div>
       </div>
 
-      <!-- Friends card — tabbed -->
       <div class="card lobby-friends">
         <div class="friends-tabs">
           <button class="friends-tab active" data-tab="friends">
@@ -340,7 +327,6 @@
           </button>
         </div>
 
-        <!-- Friends tab -->
         <div class="friends-tab-panel active" id="tabFriends">
           <div class="add-friend-row">
             <input id="friendInput" type="text" placeholder="Find someone to add…" />
@@ -349,7 +335,6 @@
           <div id="friendsList"></div>
         </div>
 
-        <!-- Requests tab -->
         <div class="friends-tab-panel" id="tabRequests">
           <div id="requestsList"><p class="empty-state">No pending friend requests.</p></div>
         </div>
@@ -358,7 +343,6 @@
     </div>
   </div>
 
-  <!-- ══════════════ CHAT ══════════════ -->
   <div id="chatScreen" class="screen">
     <div class="chat-topbar">
       <div class="chat-topbar-logo"></div>
@@ -391,7 +375,6 @@
     </div>
   </div>
 
-  <!-- Password modal -->
   <div id="pwModal">
     <div id="pwBox">
       <h3>🔒 Password required</h3>
@@ -405,10 +388,8 @@
     </div>
   </div>
 
-  <!-- Toast container for incoming friend requests -->
   <div id="toastContainer"></div>
 
-  <!-- Hidden input keeps nameEl working for joinRoom/sendMsg -->
   <input id="name" type="hidden" />
 
   <script src="website.js"></script>
